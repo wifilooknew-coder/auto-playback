@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Playback Script Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #f5f5f5;
+      text-align: center;
+      padding: 20px;
+    }
+    textarea {
+      width: 90%;
+      height: 200px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      background: #2e2e2e;
+      color: #f5f5f5;
+    }
+    button {
+      background: #007acc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005f99;
+    }
+    #output {
+      width: 90%;
+      height: 300px;
+      background: #2e2e2e;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      text-align: left;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin: 10px auto;
+      overflow-y: auto;
+    }
+    .slider-container {
+      margin: 15px 0;
+    }
+    input[type=range] {
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Playback Script Generator</h1>
+  <p>Paste hasil record log kamu di bawah ini, lalu klik "Generate Script".</p>
+
+  <textarea id="logInput" placeholder="Paste log di sini..."></textarea><br>
+
+  <div class="slider-container">
+    <label for="speedRange">Playback Speed: <span id="speedValue">1</span>x</label><br>
+    <input type="range" id="speedRange" min="1" max="300" value="1" oninput="updateSpeedValue()">
+  </div>
+
+  <button onclick="generateScript()">Generate Script</button>
+  <button onclick="copyOutput()">Copy Script</button>
+
+  <h3>Generated Playback Script:</h3>
+  <div id="output">Belum ada script...</div>
+
+  <script>
+    function updateSpeedValue() {
+      const val = document.getElementById("speedRange").value;
+      document.getElementById("speedValue").textContent = val;
+    }
+
+    function generateScript() {
+      const log = document.getElementById("logInput").value.trim().split("\n");
+      const speed = document.getElementById("speedRange").value;
+      if (log.length === 0) {
+        alert("Masukkan log dulu!");
+        return;
+      }
+
+      // template playback script
+      let script = `
+-- Playback Script (Generated)
+-- Paste ini ke Roblox Executor (LocalScript)
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- Log Data Playback
+local log = [[
+${log.join("\n")}
+]]
+
+local speed = ${speed} -- atur kecepatan playback
+
+local function parseLog(logText)
+    local lines = {}
+    for line in logText:gmatch("[^\\n]+") do
+        table.insert(lines, line)
+    end
+    return lines
+end
+
+local function playback(lines)
+    for _, line in ipairs(lines) do
+        if line:find("pos") then
+            print("Move:", line)
+            -- Gerak posisi (bisa diganti untuk teleport/move sesuai log)
+        elseif line:find("jump") then
+            char:FindFirstChildOfClass("Humanoid").Jump = true
+            print("Jump:", line)
+        end
+        task.wait(0.2 / speed)
+    end
+end
+
+local lines = parseLog(log)
+playback(lines)
+      `;
+
+      document.getElementById("output").textContent = script;
+    }
+
+    function copyOutput() {
+      const text = document.getElementById("output").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Script berhasil dicopy!");
+      });
+    }
+  </script>
+</body>
+</html>
